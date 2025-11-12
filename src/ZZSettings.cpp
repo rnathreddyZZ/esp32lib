@@ -5,6 +5,8 @@
 #include <json/AXJSON.h>
 #include <string.h>
 
+#define SETTINGS_FILE_PATH "/Settings/ZZSettings.bin"
+
 ZZSettings::ZZSettings( )
 {
 
@@ -448,7 +450,7 @@ void ZZSettings::setData( string data_str )
 void ZZSettings::save( )
 {
 
-  File file = LittleFS.open( "/Settings/ZZSettings.bin", FILE_WRITE );
+  File file = LittleFS.open( SETTINGS_FILE_PATH, FILE_WRITE );
   if (!file)
   {
     ZZ_DBG_INFO( "Failed to open the file\n" );
@@ -510,7 +512,7 @@ void ZZSettings::load( )
   char szName[128];
   char szVal[256];
 
-  File file = LittleFS.open( "/Settings/ZRZSettings.bin", FILE_READ );
+  File file = LittleFS.open( SETTINGS_FILE_PATH, FILE_READ );
 
   if( !file )
   {
@@ -562,13 +564,12 @@ void ZZSettings::load( )
 void ZZSettings::init( void )
 {
 
-  append( "wifi", "ssid", 0, 64, false, enmDataTypeString, "Mani" );
-  append( "wifi", "ssid_pwd", 0, 64, false, enmDataTypeString, "Mani0404" );
-  append( "wifi", "soft_ap_name", 0, 64, false, enmDataTypeString, "MAni" );
-  append( "wifi", "soft_ap_pwd", 0, 64, false, enmDataTypeString, "Mani0404" );
+  append( "wifi", "ssid", 0, 64, false, enmDataTypeString, "2020" );
+  append( "wifi", "ssid_pwd", 0, 64, false, enmDataTypeString, "Corolla8608" );
+  append( "wifi", "soft_ap_name", 0, 64, false, enmDataTypeString, "zoraiz" );
+  append( "wifi", "soft_ap_pwd", 0, 64, false, enmDataTypeString, "zoraiz@123" );
   append( "application", "log_srv_address", 0, 32, false, enmDataTypeString, "192.168.0.31" );
   append( "application", "log_srv_port", 1, 65535, false, enmDataTypeInt, "6600" );
-
 }
 
   /* global settings file */
