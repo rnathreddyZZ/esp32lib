@@ -510,7 +510,7 @@ void ZZSettings::load( )
   char szName[128];
   char szVal[256];
 
-  File file = LittleFS.open( "/Settings/AXSettings.bin", FILE_READ );
+  File file = LittleFS.open( "/Settings/ZRZSettings.bin", FILE_READ );
 
   if( !file )
   {
@@ -561,76 +561,14 @@ void ZZSettings::load( )
 
 void ZZSettings::init( void )
 {
+
   append( "wifi", "ssid", 0, 64, false, enmDataTypeString, "Mani" );
   append( "wifi", "ssid_pwd", 0, 64, false, enmDataTypeString, "Mani0404" );
   append( "wifi", "soft_ap_name", 0, 64, false, enmDataTypeString, "MAni" );
   append( "wifi", "soft_ap_pwd", 0, 64, false, enmDataTypeString, "Mani0404" );
   append( "application", "log_srv_address", 0, 32, false, enmDataTypeString, "192.168.0.31" );
   append( "application", "log_srv_port", 1, 65535, false, enmDataTypeInt, "6600" );
-  append( "application", "VertualTagId", 0, 21, false, enmDataTypeString, "0000003960856012" );
 
-  append( "ocpp_params", "NumberOfConnectors", 0, 5, false, enmDataTypeInt, "1" );
-  append( "ocpp_device", "address", 0, 24, false, enmDataTypeString, "49.207.12.100" ); //20.219.37.15
-  append( "ocpp_device", "port", 0, 65535, false, enmDataTypeInt, "8080" ); //9033
-  append( "ocpp_device", "path", 0, 1024, false, enmDataTypeString, "/ocpp/16/AX035" ); ///ocpp/AX016
-  append( "ocpp_device", "chargeBoxSerialNumber", 0, 32, true, enmDataTypeString, "AXONIFY_000001" );
-  append( "ocpp_device", "chargePointModel", 0, 24, true, enmDataTypeString, "211-2G07" );
-  append( "ocpp_device", "chargePointSerialNumber", 0, 64, true, enmDataTypeString, "Axonify" );
-  append( "ocpp_device", "chargePointVendor", 0, 24, true, enmDataTypeString, "Axonify" );
-  append( "ocpp_device", "protocol",0,24,true,enmDataTypeString,"ocpp1.6");
-  append( "ocpp_device", "auth_cache_path",0,1024,true,enmDataTypeString,"/Settings/Auth.json");
-  append( "ocpp_device", "firmwareVersion", 0, 24, true, enmDataTypeString, "2.0" );
-  append( "ocpp_device", "iccid", 0, 24, true, enmDataTypeString, "XX" );
-  append( "ocpp_device", "imsi", 0, 24, true, enmDataTypeString, "XX" );
-  append( "ocpp_device", "meterSerialNumber", 0, 24, true, enmDataTypeString, "SELEC-1PH" );
-  append( "ocpp_device", "meterType", 0, 24, true, enmDataTypeString, "XX" );
-  append( "ocpp_device", "local_list_path", 0, 1024, true, enmDataTypeString, "/Settings/LocalList.json" );
-  append( "ocpp_device", "offline_msg_queue_path", 0, 1024, true, enmDataTypeString, "/Settings/TXMsgs123.Q");
-  append( "ocpp_device", "session_info_path", 0, 1024, true, enmDataTypeString, "/Settings/");
-  append( "ocpp_params", "AllowOfflineTxForUnknownId", 0, 1, false, enmDataTypeBool, "false" );
-  append( "ocpp_params", "AuthorizationCacheEnabled", 0, 1, false, enmDataTypeBool, "true" );
-  append( "ocpp_params", "AuthorizeRemoteTxRequests", 0, 1, false, enmDataTypeBool, "true" );
-  append( "ocpp_params", "BlinkRepeat", 0, 10, false, enmDataTypeInt, "5" );
-  append( "ocpp_params", "ChargeProfileMaxStackLevel", 0, 1, true, enmDataTypeInt, "1" );
-  append( "ocpp_params", "ChargingScheduleAllowedChargingRateUnit", 0, 32, true, enmDataTypeString, "1.0" );
-  append( "ocpp_params", "ChargingScheduleMaxPeriods", 0, 1, true, enmDataTypeInt, "1" );
-  append( "ocpp_params", "ClockAlignedDataInterval", 0, 900, false, enmDataTypeInt, "900" );
-  append( "ocpp_params", "ConnectionTimeOut", 1, 120, false, enmDataTypeInt, "120" );
-  append( "ocpp_params", "ConnectorPhaseRotation", 0, 1, false, enmDataTypeString, "1" );
-  append( "ocpp_params", "TransactionMessageAttempts", 0, 1, false, enmDataTypeInt, "1" );
-  append( "ocpp_params", "TransactionMessageRetryInterval", 0, 1, false, enmDataTypeInt, "1" );
-  append( "ocpp_params", "ConnectorPhaseRotationMaxLength", 0, 1, true, enmDataTypeBool, "true" );
-  append( "ocpp_params", "ConnectorSwitch3to1PhaseSupported", 0, 1, true, enmDataTypeBool, "true" );
-  append( "ocpp_params", "GetConfigurationMaxKeys", 0, 100, true, enmDataTypeInt, "100" );
-  append( "ocpp_params", "HeartbeatInterval", 1, 600, false, enmDataTypeInt, "10" );
-  append( "ocpp_params", "LightIntensity", 1, 100, false, enmDataTypeInt, "100" );
-  append( "ocpp_params", "LocalAuthListEnabled", 0, 1, false, enmDataTypeBool, "true" );
-  append( "ocpp_params", "LocalAuthListMaxLength", 0, 1, true, enmDataTypeInt, "1" );
-  append( "ocpp_params", "LocalAuthorizeOffline", 0, 1, false, enmDataTypeBool, "true" );
-  append( "ocpp_params", "LocalPreAuthorize", 0, 1, false, enmDataTypeBool, "true" );
-  append( "ocpp_params", "MaxChargingProfilesInstalled", 0, 10, true, enmDataTypeInt, "1" );
-  append( "ocpp_params", "WebSocketPingInterval", 1, 3600, false, enmDataTypeInt, "45" );
-  append( "ocpp_params", "MaxEnergyOnInvalidId", 0, 2000, false, enmDataTypeInt, "2000" );
-  append( "ocpp_params", "MeterValueSampleInterval", 0, 100, false, enmDataTypeInt, "30" );
-  append( "ocpp_params", "MeterValuesAlignedData", 0, 1, false, enmDataTypeString, "1" );
-  append( "ocpp_params", "MeterValuesAlignedDataMaxlength", 0, 5, true, enmDataTypeString, "5" );
-  append( "ocpp_params", "MeterValuesSampledData", 0, 1, false, enmDataTypeString, "1" );
-  append( "ocpp_params", "MeterValuesSampledDataMaxLength", 0, 5, true, enmDataTypeInt, "5" );
-  append( "ocpp_params", "MinimumStatusDuration", 0, 50, false, enmDataTypeInt, "30" );
-  append( "ocpp_params", "NumberOfConnectors", 1, 5, true, enmDataTypeInt, "1" );
-  append( "ocpp_params", "ReserveConnectorZeroSupported", 0, 1, true, enmDataTypeBool, "true" );
-  append( "ocpp_params", "ResetRetries", 1, 5, true, enmDataTypeInt, "5" );
-  append( "ocpp_params", "SendLocalListMaxLength", 0, 1, true, enmDataTypeInt, "1" );
-  append( "ocpp_params", "UnlockConnectorOnEVSideDisconnect", 0, 1, true, enmDataTypeBool, "true" );
-  append( "ocpp_params", "StatusbeatInterval", 0, 1, true, enmDataTypeBool, "true" );
-  append( "ocpp_params", "StopTransactionOnEVSideDisconnect", 0, 1, false, enmDataTypeBool, "true" );
-  append( "ocpp_params", "StopTransactionOnInvalidId", 0, 1, false, enmDataTypeBool, "true" );
-  append( "ocpp_params", "StopTxnAlignedData", 0, 128, true, enmDataTypeString, "Energy.Active.Import" );
-  append( "ocpp_params", "StopTxnAlignedDataMaxLength", 0, 128, true, enmDataTypeInt, "128" );
-  append( "ocpp_params", "StopTxnSampleData", 0, 128, true, enmDataTypeString, "Energy.Active.Import" );
-  append( "ocpp_params", "StopTxnSampleDataMaxLength", 0, 128, true, enmDataTypeInt, "128" );
-  append( "ocpp_params", "SupportedFeatureProfiles", 0, 1, true, enmDataTypeString, "true" );
-  append( "ocpp_params", "SupportedFeatureProfilesMaxLength", 0, 1, true, enmDataTypeBool, "true" );
 }
 
   /* global settings file */
