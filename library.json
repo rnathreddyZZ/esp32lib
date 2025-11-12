@@ -1,0 +1,10 @@
+{
+  "name": "esp32lib",
+  "version": "0.0.0+20251116202117",
+  "dependencies": [
+    {
+        "name": "esp32debug",
+        "version": "ssh://git@github.com:rnathreddyZZ/esp32debug.git"
+    }
+  ]
+}
