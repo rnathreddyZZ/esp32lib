@@ -4,7 +4,7 @@
   "dependencies": [
     {
         "name": "esp32debug",
-        "version": "ssh://git@github.com:rnathreddyZZ/esp32debug.git"
+        "version": "git@github.com:rnathreddyZZ/esp32debug.git"
     }
   ]
 }
