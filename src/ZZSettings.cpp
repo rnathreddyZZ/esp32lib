@@ -570,9 +570,9 @@ void ZZSettings::init( void )
   append( "wifi", "soft_ap_pwd", 0, 64, false, enmDataTypeString, "zoraiz@123" );
   append( "application", "log_srv_address", 0, 32, false, enmDataTypeString, "192.168.0.31" );
   append( "application", "log_srv_port", 1, 65535, false, enmDataTypeInt, "6600" );
-  append("esp32_device", "address", 0, 24, false, enmDataTypeString,"49.207.12.100");
-  append("esp32_device", "port", 0, 65535, false, enmDataTypeInt, "8073");
-  append("esp32_device", "path", 0, 1024, false, enmDataTypeString, "/device/SN123456789");
+  append("esp32_device", "ws_address", 0, 24, false, enmDataTypeString,"49.207.12.100");
+  append("esp32_device", "ws_port", 0, 65535, false, enmDataTypeInt, "8073");
+  append("esp32_device", "ws_URL", 0, 1024, false, enmDataTypeString, "/device/SN123456789");
 }
 
   /* global settings file */
