@@ -44,7 +44,7 @@ void ZZSettings::append( const char *section_pch,
   {
     ostParam.name_str = name_pch;
   }
- 
+
   if( NULL != section_pch )
   {
     stParams ostParams = m_section_ost[section_pch];
@@ -106,7 +106,7 @@ void ZZSettings::setParam( const char *section_pch,
         iInd++;
       }
     }
-    
+
     ++it;
   }
 }
@@ -115,7 +115,7 @@ void ZZSettings::setParam( const char *section_pch,
                            const char *name_pch,
                            int32_t value_i32 )
 {
-  
+
   char value_pch[128];
 
   sprintf ( value_pch, "%d", value_i32 );
@@ -244,7 +244,7 @@ bool ZZSettings::getBoolParam( const char* sec_pch,
         {
           value_b = false;
           rcode_b = true;
-        }        
+        }
       }
     }
   }
@@ -274,7 +274,7 @@ bool ZZSettings::isReadOnly( const char* sec_pch,
                          ( param_ost.value_str == "0" ) )
         {
           rcode_b = true;
-        }        
+        }
       }
     }
   }
@@ -310,7 +310,7 @@ bool ZZSettings::getRangeByParam( const char* sec_pch,
   return rcode_b;
 }
 
-enmDataType ZZSettings::getType( const char* sec_pcch, 
+enmDataType ZZSettings::getType( const char* sec_pcch,
                                  const char* name_pcch )
 {
 
@@ -382,7 +382,7 @@ string ZZSettings::getData( string sec_str )
     for( auto i = ostParams.begin( ); i != ostParams.end( ); ++i )
     {
       stParam param_ost = *i;
-      
+
       AXJSON ocObjKeyValue;
       ocObjKeyValue.newObj( );
 
@@ -415,7 +415,7 @@ void ZZSettings::setData( string data_str )
   json_object *pcType = nullptr;
   json_object *pcReadOnly = nullptr;
   json_object *pcValue = nullptr;
-  
+
   const char* sec_pcch = nullptr;
   const char* name_pcch = nullptr;
   const char* value_pcch = nullptr;
@@ -426,7 +426,7 @@ void ZZSettings::setData( string data_str )
   ocJSON.get_json_obj( ocJSON.getKey( ), pcObj );
 
   uint8_t ucLen = json_object_array_length( pcObj );
-  for( uint8_t ucInd = 0; ucInd < ucLen; ucInd++ ) 
+  for( uint8_t ucInd = 0; ucInd < ucLen; ucInd++ )
   {
 
     json_object *pcC = json_object_array_get_idx( pcObj, ucInd );
@@ -461,7 +461,7 @@ void ZZSettings::save( )
 
      int32_t iLen1 = m_section_ost.size( );
      file.write( ( const uint8_t* )&iLen1, sizeof( int32_t ) );
-     
+
     for( ; it != m_section_ost.end( ); ++it )
     {
      int32_t iLen = it->first.length( );
@@ -469,10 +469,10 @@ void ZZSettings::save( )
      file.write( ( const uint8_t* )it->first.c_str( ), iLen );
 
      vector<stParam> ostParams = it->second;
-     
+
      int32_t iCnt = ostParams.size( );
      file.write( ( const uint8_t*)&iCnt, sizeof( int32_t ) );
-   
+
      for( auto i = ostParams.begin( ); i != ostParams.end( ); ++i )
      {
       stParam ostParam = *i;
@@ -491,7 +491,7 @@ void ZZSettings::save( )
       file.write( ( const uint8_t*)ostParam.value_str.c_str( ), ln_u16 );
      }
     }
-   
+
     file.close();
   }
 }
@@ -507,7 +507,7 @@ void ZZSettings::load( )
   uint16_t min_u16 = 0;
   uint8_t type_u8 = 0;
   uint8_t readonly_b = 0;
- 
+
   char szSec[128];
   char szName[128];
   char szVal[256];
@@ -534,7 +534,7 @@ void ZZSettings::load( )
 
      file.read( ( uint8_t* )&len_u32, sizeof( int32_t ) );
      params_u32 = len_u32;
-     
+
      for( uint32_t param_u32 = 0; param_u32 < params_u32; param_u32++ )
      {
       file.read( ( uint8_t*)&max_u16, sizeof( int16_t ) );
@@ -570,6 +570,9 @@ void ZZSettings::init( void )
   append( "wifi", "soft_ap_pwd", 0, 64, false, enmDataTypeString, "zoraiz@123" );
   append( "application", "log_srv_address", 0, 32, false, enmDataTypeString, "192.168.0.31" );
   append( "application", "log_srv_port", 1, 65535, false, enmDataTypeInt, "6600" );
+  append("esp32_device", "address", 0, 24, false, enmDataTypeString,"49.207.12.100");
+  append("esp32_device", "port", 0, 65535, false, enmDataTypeInt, "8073");
+  append("esp32_device", "path", 0, 1024, false, enmDataTypeString, "/device/SN123456789");
 }
 
   /* global settings file */
