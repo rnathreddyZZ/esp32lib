@@ -564,15 +564,15 @@ void ZZSettings::load( )
 void ZZSettings::init( void )
 {
 
-  append( "wifi", "ssid", 0, 64, false, enmDataTypeString, "2020" );
-  append( "wifi", "ssid_pwd", 0, 64, false, enmDataTypeString, "Corolla8608" );
+  append( "wifi", "ssid", 0, 64, false, enmDataTypeString, "SaNaSW" );
+  append( "wifi", "ssid_pwd", 0, 64, false, enmDataTypeString, "SaNa@2022#123456" );
   append( "wifi", "soft_ap_name", 0, 64, false, enmDataTypeString, "zoraiz" );
   append( "wifi", "soft_ap_pwd", 0, 64, false, enmDataTypeString, "zoraiz@123" );
   append( "application", "log_srv_address", 0, 32, false, enmDataTypeString, "192.168.0.31" );
   append( "application", "log_srv_port", 1, 65535, false, enmDataTypeInt, "6600" );
   append("application", "ws_address", 0, 24, false, enmDataTypeString,"49.207.12.100");
-  append("application", "ws_port", 0, 65535, false, enmDataTypeInt, "8073");
-  append("application", "ws_URL", 0, 1024, false, enmDataTypeString, "/device/SN123456789");
+  append("application", "ws_port", 0, 65535, false, enmDataTypeInt, "8080");
+  append("application", "ws_URL", 0, 1024, false, enmDataTypeString, "/fieldsync/device/SN123456789");
 }
 
   /* global settings file */
