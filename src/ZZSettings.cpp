@@ -6,6 +6,7 @@
 #include <string.h>
 
 #define SETTINGS_FILE_PATH "/Settings/ZZSettings.bin"
+#define SETTINGS_TMP_PATH  "/Settings/ZZSettings.bin.tmp"
 
 ZZSettings::ZZSettings( )
 {
@@ -26,9 +27,14 @@ void ZZSettings::append( const char *section_pch,
                          const char *value_pch )
 {
 
-  stParam ostParam;
+  if( NULL == section_pch )
+  {
+    ZZ_DBG_ERR( "append: no section given\n" );
+    return;
+  }
 
-  memset( &ostParam, 0x00, sizeof( ostParam ) );
+    /* value-initialise; memset would corrupt the string members */
+  stParam ostParam{ };
 
   ostParam.min_u16 = min_u16;
   ostParam.max_u16 = max_u16;
@@ -45,18 +51,7 @@ void ZZSettings::append( const char *section_pch,
     ostParam.name_str = name_pch;
   }
 
-  if( NULL != section_pch )
-  {
-    stParams ostParams = m_section_ost[section_pch];
-    ostParams.push_back( ostParam );
-    m_section_ost[section_pch] = ostParams;
-  }
-  else
-  {
-    stParams ostParams;
-    ostParams.push_back( ostParam );
-    m_section_ost[section_pch] = ostParams;
-  }
+  m_section_ost[section_pch].push_back( ostParam );
 }
 
 
@@ -450,49 +445,72 @@ void ZZSettings::setData( string data_str )
 void ZZSettings::save( )
 {
 
-  File file = LittleFS.open( SETTINGS_FILE_PATH, FILE_WRITE );
+    /* write to a temporary file and rename it over the
+       settings file, so a power loss never leaves a
+       truncated settings file behind */
+  File file = LittleFS.open( SETTINGS_TMP_PATH, FILE_WRITE );
   if (!file)
   {
-    ZZ_DBG_INFO( "Failed to open the file\n" );
+    ZZ_DBG_ERR( "Failed to open the file\n" );
   }
   else
   {
+    bool bOk = true;
+    auto write = [&]( const void* pvData, size_t uLen )
+    {
+      if( bOk && file.write( ( const uint8_t* )pvData, uLen ) != uLen )
+      {
+        bOk = false;
+      }
+    };
+
     std::map<string, vector<stParam>>::iterator it = m_section_ost.begin( );
 
      int32_t iLen1 = m_section_ost.size( );
-     file.write( ( const uint8_t* )&iLen1, sizeof( int32_t ) );
+     write( &iLen1, sizeof( int32_t ) );
 
     for( ; it != m_section_ost.end( ); ++it )
     {
      int32_t iLen = it->first.length( );
-     file.write( ( const uint8_t* )&iLen, sizeof( int32_t ) );
-     file.write( ( const uint8_t* )it->first.c_str( ), iLen );
+     write( &iLen, sizeof( int32_t ) );
+     write( it->first.c_str( ), iLen );
 
      vector<stParam> ostParams = it->second;
 
      int32_t iCnt = ostParams.size( );
-     file.write( ( const uint8_t*)&iCnt, sizeof( int32_t ) );
+     write( &iCnt, sizeof( int32_t ) );
 
      for( auto i = ostParams.begin( ); i != ostParams.end( ); ++i )
      {
       stParam ostParam = *i;
 
-      file.write( ( const uint8_t* )&ostParam.max_u16, sizeof( int16_t ) );
-      file.write( ( const uint8_t* )&ostParam.min_u16, sizeof( int16_t ) );
-      file.write( ( const uint8_t* )&ostParam.type_u8, sizeof( int8_t ) );
-      file.write( ( const uint8_t* )&ostParam.readonly_b, sizeof( int8_t ) );
+      write( &ostParam.max_u16, sizeof( int16_t ) );
+      write( &ostParam.min_u16, sizeof( int16_t ) );
+      write( &ostParam.type_u8, sizeof( int8_t ) );
+      write( &ostParam.readonly_b, sizeof( int8_t ) );
 
       int16_t ln_u16 = ostParam.name_str.length( );
-      file.write ( ( const uint8_t* )&ln_u16, sizeof( int16_t ) );
-      file.write ( ( const uint8_t* )ostParam.name_str.c_str( ), ln_u16 );
+      write( &ln_u16, sizeof( int16_t ) );
+      write( ostParam.name_str.c_str( ), ln_u16 );
 
       ln_u16 = ostParam.value_str.length( );
-      file.write( ( const uint8_t*)&ln_u16, sizeof(int16_t ) );
-      file.write( ( const uint8_t*)ostParam.value_str.c_str( ), ln_u16 );
+      write( &ln_u16, sizeof( int16_t ) );
+      write( ostParam.value_str.c_str( ), ln_u16 );
      }
     }
 
     file.close();
+
+      /* LittleFS rename replaces the target atomically */
+    if( bOk && LittleFS.rename( SETTINGS_TMP_PATH, SETTINGS_FILE_PATH ) )
+    {
+      ZZ_DBG_INFO( "Settings saved\n" );
+    }
+    else
+    {
+      ZZ_DBG_ERR( "Failed to save the settings\n" );
+      LittleFS.remove( SETTINGS_TMP_PATH );
+    }
   }
 }
 
@@ -508,9 +526,9 @@ void ZZSettings::load( )
   uint8_t type_u8 = 0;
   uint8_t readonly_b = 0;
 
-  char szSec[128];
-  char szName[128];
-  char szVal[256];
+  string strSec;
+  string strName;
+  string strVal;
 
   File file = LittleFS.open( SETTINGS_FILE_PATH, FILE_READ );
 
@@ -519,45 +537,69 @@ void ZZSettings::load( )
     ZZ_DBG_INFO( "Device configuration not found. Using the factory set configuration\n" )
     init( );
     save( );
+    return;
   }
-  else
+
+  ZZ_DBG_INFO("Initializing configuration file...\n" );
+
+    /* every read is checked, and every length is validated
+       against the bytes left in the file, so a truncated or
+       corrupted file can not overrun memory */
+  auto readN = [&]( void* pvData, size_t uLen ) -> bool
   {
-    ZZ_DBG_INFO("Initializing configuration file...\n" );
-    file.read( ( uint8_t* )&len_u32, sizeof( uint32_t ) );
-
-    secs_u32 = len_u32;
-    for( uint32_t sec_u32 = 0; sec_u32 < secs_u32; sec_u32++ )
+    return file.read( ( uint8_t* )pvData, uLen ) == uLen;
+  };
+  auto readStr = [&]( string& str, int32_t iLen ) -> bool
+  {
+    if( iLen < 0 || iLen > file.available( ) )
     {
-     file.read( ( uint8_t* )&len_u32, sizeof ( int32_t ) );
-     file.read( ( uint8_t* )szSec, len_u32 );
-     szSec[len_u32] = '\0';
-
-     file.read( ( uint8_t* )&len_u32, sizeof( int32_t ) );
-     params_u32 = len_u32;
-
-     for( uint32_t param_u32 = 0; param_u32 < params_u32; param_u32++ )
-     {
-      file.read( ( uint8_t*)&max_u16, sizeof( int16_t ) );
-      file.read( ( uint8_t*)&min_u16, sizeof( int16_t ) );
-      file.read( ( uint8_t*)&type_u8, sizeof( int8_t ) );
-      file.read( ( uint8_t*)&readonly_b, sizeof( int8_t ) );
-
-      file.read( ( uint8_t* )&len_u16, sizeof( int16_t ) );
-      file.read( ( uint8_t* )szName, len_u16 );
-      szName[len_u16] = '\0';
-
-      file.read ((uint8_t*)&len_u16, sizeof(int16_t));
-      file.read ((uint8_t*)szVal, len_u16);
-      szVal[len_u16] = '\0';
-
-      append (szSec, szName, min_u16, max_u16,
-                     readonly_b, type_u8, szVal);
-     }
+      return false;
     }
+    str.resize( iLen );
+    return iLen == 0 || readN( &str[0], iLen );
+  };
 
-    ZZ_DBG_INFO( "Initialization done.\n" );
-    file.close( );
+  bool bOk = readN( &len_u32, sizeof( int32_t ) ) && len_u32 >= 0;
+  secs_u32 = len_u32;
+
+  for( int32_t sec_u32 = 0; bOk && sec_u32 < secs_u32; sec_u32++ )
+  {
+   bOk = readN( &len_u32, sizeof( int32_t ) ) &&
+         readStr( strSec, len_u32 ) &&
+         readN( &params_u32, sizeof( int32_t ) ) &&
+         params_u32 >= 0;
+
+   for( int32_t param_u32 = 0; bOk && param_u32 < params_u32; param_u32++ )
+   {
+    bOk = readN( &max_u16, sizeof( int16_t ) ) &&
+          readN( &min_u16, sizeof( int16_t ) ) &&
+          readN( &type_u8, sizeof( int8_t ) ) &&
+          readN( &readonly_b, sizeof( int8_t ) ) &&
+          readN( &len_u16, sizeof( int16_t ) ) &&
+          readStr( strName, len_u16 ) &&
+          readN( &len_u16, sizeof( int16_t ) ) &&
+          readStr( strVal, len_u16 );
+
+    if( bOk )
+    {
+      append( strSec.c_str( ), strName.c_str( ), min_u16, max_u16,
+              readonly_b, type_u8, strVal.c_str( ) );
+    }
+   }
   }
+
+  file.close( );
+
+  if( false == bOk )
+  {
+    ZZ_DBG_ERR( "Configuration file corrupted. Restoring the factory set configuration\n" );
+    m_section_ost.clear( );
+    init( );
+    save( );
+    return;
+  }
+
+  ZZ_DBG_INFO( "Initialization done.\n" );
 }
 
 

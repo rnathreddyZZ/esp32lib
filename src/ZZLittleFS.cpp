@@ -18,13 +18,17 @@ static bool createDir( fs::FS &fs, const char * path )
 }
 
   /* function to save the given data of length to
-        the given filename */
+        the given filename. the data is written to a
+        temporary file which is then renamed over the
+        target, so a power loss never leaves a truncated file */
 bool saveFile( const char* pcchFName,
                const char* pchData, size_t uLen )
 {
 
   ZZ_DBG_INFO( "Writing file: %s\n", pcchFName );
-  File file = LittleFS.open( pcchFName, FILE_WRITE );
+
+  String strTmp = String( pcchFName ) + ".tmp";
+  File file = LittleFS.open( strTmp.c_str( ), FILE_WRITE );
 
   if( !file )
   {
@@ -35,6 +39,13 @@ bool saveFile( const char* pcchFName,
   bool bOk = ( file.write( (const uint8_t*)pchData, uLen ) == uLen );
   file.close( );
 
+    /* LittleFS rename replaces the target atomically */
+  if( bOk && false == LittleFS.rename( strTmp.c_str( ), pcchFName ) )
+  {
+    ZZ_DBG_ERR( "- rename failed\n" );
+    bOk = false;
+  }
+
   if( bOk )
     {
       ZZ_DBG_INFO( "- file written\n" );
@@ -42,6 +53,7 @@ bool saveFile( const char* pcchFName,
   else
     {
       ZZ_DBG_ERR( "- write failed\n" );
+      LittleFS.remove( strTmp.c_str( ) );
     }
   return bOk;
 }
