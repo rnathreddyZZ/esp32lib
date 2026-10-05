@@ -7,20 +7,24 @@
   /* include debug macros */
 #include <ZZDebug.h>
 
-  /* function to save the given data of length to 
-        the given filename */
-void saveFile( const char* pcchFName, /* name of the file to be saved */
+  /* function to save the given data of length to
+        the given filename. returns true on success */
+bool saveFile( const char* pcchFName, /* name of the file to be saved */
                const char* pchData,   /* data to be saved */
-               int32_t iLen );        /* length of the data */
+               size_t uLen );         /* length of the data */
 
   /* function to read/retrieve the data from the
-        given filename */
-void getFile ( const char* pcchFName,   /* name of the file to retrieve */
-               char** pchData,          /* data to be received */
-               int32_t *piLen );        /* length of the data received */
+        given filename into the caller's buffer. the data is
+        always NUL terminated, so at most uBufSize - 1 bytes are read.
+        returns false if the file can not be opened or does not fit */
+bool getFile ( const char* pcchFName,   /* name of the file to retrieve */
+               char* pchBuf,            /* buffer to receive the data */
+               size_t uBufSize,         /* size of the buffer in bytes */
+               size_t *puLen );         /* length of the data received */
 
-  /* initialize the filesystem and optionally create
-     settings file, if not exist*/
-void initLittleFS( void );
+  /* mount the filesystem (formatting it if it can not be
+     mounted) and create the settings folder, if not exist.
+     returns false if the filesystem is not usable */
+bool initLittleFS( void );
 
 #endif /* ZZ_LITTLE_FS_H */
