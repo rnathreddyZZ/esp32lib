@@ -4,6 +4,7 @@
 
 #include <json/AXJSON.h>
 #include <string.h>
+#include <set>
 
 #define SETTINGS_FILE_PATH "/Settings/ZZSettings.bin"
 #define SETTINGS_TMP_PATH  "/Settings/ZZSettings.bin.tmp"
@@ -530,11 +531,14 @@ void ZZSettings::load( )
   string strName;
   string strVal;
 
+  std::map<string, stParams> ostLoaded;
+
   File file = LittleFS.open( SETTINGS_FILE_PATH, FILE_READ );
 
   if( !file )
   {
     ZZ_DBG_INFO( "Device configuration not found. Using the factory set configuration\n" )
+    m_section_ost.clear( );
     init( );
     save( );
     return;
@@ -582,21 +586,71 @@ void ZZSettings::load( )
 
     if( bOk )
     {
-      append( strSec.c_str( ), strName.c_str( ), min_u16, max_u16,
-              readonly_b, type_u8, strVal.c_str( ) );
+      stParam ostParam{ };
+      ostParam.name_str   = strName;
+      ostParam.min_u16    = min_u16;
+      ostParam.max_u16    = max_u16;
+      ostParam.readonly_b = readonly_b;
+      ostParam.type_u8    = ( enmDataType )type_u8;
+      ostParam.value_str  = strVal;
+      ostLoaded[strSec].push_back( ostParam );
     }
    }
   }
 
   file.close( );
 
+    /* start from the factory set configuration, so that
+       parameters added by a newer firmware are always present */
+  m_section_ost.clear( );
+  init( );
+
   if( false == bOk )
   {
     ZZ_DBG_ERR( "Configuration file corrupted. Restoring the factory set configuration\n" );
-    m_section_ost.clear( );
-    init( );
     save( );
     return;
+  }
+
+    /* overlay the stored values. the firmware defines the
+       parameter attributes (range, type, read-only), the file
+       only supplies the value. parameters not known to this
+       firmware are kept, so a downgrade/upgrade does not lose them */
+  std::set<std::pair<string, string>> ostMatched;
+  size_t uDefaults = 0;
+  for( auto& sec : m_section_ost )
+  {
+    uDefaults += sec.second.size( );
+  }
+
+  for( auto& sec : ostLoaded )
+  {
+    for( auto& ostLoadedParam : sec.second )
+    {
+      stParams& ostParams = m_section_ost[sec.first];
+      auto iter = std::find_if( ostParams.begin( ), ostParams.end( ),
+                                [&]( const stParam& item )
+                                {
+                                  return item.name_str == ostLoadedParam.name_str;
+                                } );
+      if( iter != ostParams.end( ) )
+      {
+        iter->value_str = ostLoadedParam.value_str;
+        ostMatched.insert( { sec.first, ostLoadedParam.name_str } );
+      }
+      else
+      {
+        ostParams.push_back( ostLoadedParam );
+      }
+    }
+  }
+
+    /* persist the defaults of newly added parameters */
+  if( ostMatched.size( ) < uDefaults )
+  {
+    ZZ_DBG_INFO( "Adding %u new parameter(s) to the configuration file\n",
+                 (unsigned)( uDefaults - ostMatched.size( ) ) );
+    save( );
   }
 
   ZZ_DBG_INFO( "Initialization done.\n" );
@@ -622,6 +676,13 @@ ZZSettings *gpcSettings = nullptr;
 
 void initSettings( )
 {
+    /* other tasks may already hold the pointer; never replace it */
+  if( nullptr != gpcSettings )
+  {
+    ZZ_DBG_WARN( "Settings already initialized\n" );
+    return;
+  }
+
   gpcSettings = new ZZSettings;
   gpcSettings->load( );
 }
