@@ -3,12 +3,10 @@
 #include <esp_littlefs.h>
 #include <esp_partition.h>
 #include <ZZDebug.h>
-#include <ZZESPAL.h>
 
   /* must match the FS partition in the partition table */
 #define FS_PARTITION_LABEL "spiffs"
 #define FS_BASE_PATH       "/littlefs"
-#define FS_MAX_OPEN_FILES  10
 
 #define ZZ_SETTINGS_DIR    "/Settings"
 
@@ -29,12 +27,15 @@ static bool createDir( fs::FS &fs, const char * path )
 
 static bool mountLittleFS( void )
 {
-  return LittleFS.begin( false, FS_BASE_PATH, FS_MAX_OPEN_FILES,
-                         FS_PARTITION_LABEL );
+    /* maxOpenFiles ( 10 ) is ignored by LittleFS; passed only
+       because the partition label argument comes after it */
+  return LittleFS.begin( false, FS_BASE_PATH, 10, FS_PARTITION_LABEL );
 }
 
   /* repeat the mount outside LittleFS.begin( ), which hides
-     the error code; unmounts again if the mount succeeds */
+     the error code; unmounts again if the mount succeeds.
+     conf must match the one in LittleFSFS::begin( ) of the
+     Arduino core (checked against 2.0.17) */
 static esp_err_t probeMount( void )
 {
   esp_vfs_littlefs_conf_t conf = { };
@@ -65,8 +66,10 @@ bool initLittleFS( )
       return false;
     }
 
-      /* only ESP_FAIL means the partition content is unusable;
-         any other error (e.g. ESP_ERR_NO_MEM) must not wipe it */
+      /* ESP_FAIL means LittleFS could not mount the partition
+         content (corrupt, flash I/O error or failed grow); only
+         then format. any other error (e.g. ESP_ERR_NO_MEM) is
+         not about the content and must not wipe it */
     esp_err_t err = probeMount( );
     if( ESP_OK == err )
     {
