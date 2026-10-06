@@ -54,11 +54,13 @@ public:
                const uint8_t   type_u8,
                const char      *value_pch );
 
-  void setParam( const char  *section_pch,
+    /* false if the parameter does not exist or the value does
+       not match its type and range */
+  bool setParam( const char  *section_pch,
                  const char *name_pch, 
                  const char *value_pch );
 
-  void setParam( const char  *section_pch,
+  bool setParam( const char  *section_pch,
                  const char *name_pch, 
                  int32_t value_i32 );
 
@@ -96,7 +98,9 @@ public:
 
   string getData( string sec_str );
 
-  void setData( string data_str ); 
+    /* all-or-nothing: false, and nothing changed, if any entry
+       is unknown, read-only or invalid */
+  bool setData( string data_str ); 
 
 private:
 
@@ -105,6 +109,12 @@ private:
   bool getParam( const char* sec_pch, 
                  const char *name_pch,
                  stParam& param_ost );
+
+  stParam* findParam( const char* sec_pch,
+                      const char* name_pch );
+
+  bool isValidValue( const stParam& param_ost,
+                     const char* value_pch );
 };
 
 void initSettings( void );
