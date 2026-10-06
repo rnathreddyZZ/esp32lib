@@ -1,4 +1,5 @@
 #include "ZZLittleFS.h"
+#include <LittleFS.h>
 #include <ZZDebug.h>
 #include <ZZESPAL.h>
 
@@ -15,90 +16,6 @@ static bool createDir( fs::FS &fs, const char * path )
 
   ZZ_DBG_ERR( "mkdir failed: %s\n", path );
   return false;
-}
-
-  /* function to save the given data of length to
-        the given filename. the data is written to a
-        temporary file which is then renamed over the
-        target, so a power loss never leaves a truncated file */
-bool saveFile( const char* pcchFName,
-               const char* pchData, size_t uLen )
-{
-
-  ZZ_DBG_INFO( "Writing file: %s\n", pcchFName );
-
-  String strTmp = String( pcchFName ) + ".tmp";
-  File file = LittleFS.open( strTmp.c_str( ), FILE_WRITE );
-
-  if( !file )
-  {
-    ZZ_DBG_ERR( "- failed to open file for writing\n" );
-    return false;
-  }
-
-  bool bOk = ( file.write( (const uint8_t*)pchData, uLen ) == uLen );
-  file.close( );
-
-    /* LittleFS rename replaces the target atomically */
-  if( bOk && false == LittleFS.rename( strTmp.c_str( ), pcchFName ) )
-  {
-    ZZ_DBG_ERR( "- rename failed\n" );
-    bOk = false;
-  }
-
-  if( bOk )
-    {
-      ZZ_DBG_INFO( "- file written\n" );
-    }
-  else
-    {
-      ZZ_DBG_ERR( "- write failed\n" );
-      LittleFS.remove( strTmp.c_str( ) );
-    }
-  return bOk;
-}
-
-  /* function to read/retrieve the data from the
-        given filename */
-bool getFile( const char* pcchFName,
-              char* pchBuf,
-              size_t uBufSize,
-              size_t *puLen )
-{
-
-  ZZ_DBG_DEBUG( "Reading file: %s\n", pcchFName );
-
-  *puLen = 0;
-  if( pchBuf == nullptr || uBufSize == 0 )
-  {
-    return false;
-  }
-  pchBuf[0] = '\0';
-
-  File file = LittleFS.open( pcchFName );
-  if( !file )
-  {
-    ZZ_DBG_ERR( "- failed to open file for reading\n" );
-    return false;
-  }
-
-    /* leave room for the NUL terminator */
-  size_t uFileSize = file.size( );
-  if( uFileSize >= uBufSize )
-  {
-    ZZ_DBG_ERR( "- file too large: %u bytes, buffer %u\n",
-                (unsigned)uFileSize, (unsigned)uBufSize );
-    file.close( );
-    return false;
-  }
-
-  size_t uRead = file.read( (uint8_t*)pchBuf, uFileSize );
-  file.close( );
-  pchBuf[uRead] = '\0';
-  *puLen = uRead;
-
-  ZZ_DBG_DEBUG( "Reading file done: %s\n", pcchFName );
-  return uRead == uFileSize;
 }
 
 bool initLittleFS( )
