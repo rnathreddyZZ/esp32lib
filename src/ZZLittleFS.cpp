@@ -16,10 +16,10 @@ static bool createDir( fs::FS &fs, const char * path )
 
   ZZ_DBG_INFO( "Creating Dir: %s\n", path );
   if( fs.mkdir( path ) )
-    {
-      ZZ_DBG_INFO( "Dir created\n" );
-      return true;
-    }
+  {
+    ZZ_DBG_INFO( "Dir created\n" );
+    return true;
+  }
 
   ZZ_DBG_ERR( "mkdir failed: %s\n", path );
   return false;
