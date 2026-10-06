@@ -59,7 +59,7 @@ bool initLittleFS( )
   if( false == mountLittleFS( ) )
   {
     if( NULL == esp_partition_find_first( ESP_PARTITION_TYPE_DATA,
-                                          ESP_PARTITION_SUBTYPE_DATA_SPIFFS,
+                                          ESP_PARTITION_SUBTYPE_ANY,
                                           FS_PARTITION_LABEL ) )
     {
       ZZ_DBG_ERR( "LittleFS partition '%s' not found\n", FS_PARTITION_LABEL );
