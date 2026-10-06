@@ -10,6 +10,8 @@
 #define FS_BASE_PATH       "/littlefs"
 #define FS_MAX_OPEN_FILES  10
 
+#define ZZ_SETTINGS_DIR    "/Settings"
+
   /* function to create folder with the given name */
 static bool createDir( fs::FS &fs, const char * path )
 {
@@ -103,11 +105,26 @@ bool initLittleFS( )
     ZZ_DBG_INFO ("Free PSRAM: %u\n",  (unsigned)ESP.getFreePsram( ));
   #endif // BOARD_HAS_PSRAM
 
-  if( false == LittleFS.exists( "/Settings" ) )
+  if( true == LittleFS.exists( ZZ_SETTINGS_DIR ) )
   {
-    return createDir( LittleFS, "/Settings" );
+    File dir = LittleFS.open( ZZ_SETTINGS_DIR );
+    bool bIsDir = dir && dir.isDirectory( );
+    dir.close( );
+    if( bIsDir )
+    {
+      ZZ_DBG_DEBUG( "Settings folder already exist.\n" );
+      return true;
+    }
+
+      /* a file in place of the folder would make every
+         settings save fail; it holds no settings, remove it */
+    ZZ_DBG_WARN( "%s is not a folder, removing it\n", ZZ_SETTINGS_DIR );
+    if( false == LittleFS.remove( ZZ_SETTINGS_DIR ) )
+    {
+      ZZ_DBG_ERR( "remove failed: %s\n", ZZ_SETTINGS_DIR );
+      return false;
+    }
   }
 
-  ZZ_DBG_DEBUG( "Settings folder already exist.\n" );
-  return true;
+  return createDir( LittleFS, ZZ_SETTINGS_DIR );
 }
