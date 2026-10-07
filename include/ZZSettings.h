@@ -7,8 +7,6 @@
 #include <vector>
 #include <map>
 
-using namespace std;
-
 typedef enum data_type_enm
 {
   enmDataTypeNone     = 0x00,
@@ -20,16 +18,16 @@ typedef enum data_type_enm
 
 typedef struct stparam
 {
-  string       name_str;
+  std::string  name_str;
   uint16_t     min_u16;
   uint16_t     max_u16;
   bool         readonly_b;
   enmDataType  type_u8;
-  string       value_str;
+  std::string  value_str;
 }stParam;
 
-typedef vector<stParam> stParams;
-typedef vector<stParam>::iterator stParamIter;
+typedef std::vector<stParam> stParams;
+typedef std::vector<stParam>::iterator stParamIter;
 
 class ZZSettings
 {
@@ -92,19 +90,19 @@ public:
   enmDataType getType( const char* sec_pcch, 
                        const char* name_pcch );
 
-  std::vector<string> getSections( );
+  std::vector<std::string> getSections( );
 
-  std::vector<string> getKeys( const char* sec_pcch );
+  std::vector<std::string> getKeys( const char* sec_pcch );
 
-  string getData( string sec_str );
+  std::string getData( std::string sec_str );
 
     /* all-or-nothing: false, and nothing changed, if any entry
        is unknown, read-only or invalid */
-  bool setData( string data_str ); 
+  bool setData( std::string data_str ); 
 
 private:
 
-  std::map<string, vector<stParam>> m_section_ost;
+  std::map<std::string, std::vector<stParam>> m_section_ost;
 
   bool getParam( const char* sec_pch, 
                  const char *name_pch,

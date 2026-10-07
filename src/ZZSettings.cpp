@@ -9,6 +9,10 @@
 #include <algorithm>
 #include <set>
 
+using std::string;
+using std::vector;
+using std::pair;
+
 #define SETTINGS_FILE_PATH "/Settings/ZZSettings.bin"
 #define SETTINGS_TMP_PATH  "/Settings/ZZSettings.bin.tmp"
 
