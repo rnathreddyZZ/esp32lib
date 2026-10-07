@@ -69,18 +69,18 @@ public:
 
   bool getBoolParam( const char* sec_pch, 
                      const char *name_pch,
-                     bool& balue_b );
+                     bool& value_b );
 
   bool getIntParam( const char* sec_pch, 
                     const char *name_pch, 
                     uint32_t& value_u32 );
 
   bool getDblParam( const char* sec_pch, 
-                    const char *name_pcch,
-                    double& Value_d );
+                    const char *name_pch,
+                    double& value_d );
 
-  bool isReadOnly( const char* pcchSec,
-                   const char* pcchKey );
+  bool isReadOnly( const char* sec_pch,
+                   const char* name_pch );
 
   bool getRangeByParam( const char* sec_pch,
                         const char *name_pch,
@@ -103,10 +103,6 @@ public:
 private:
 
   std::map<std::string, std::vector<stParam>> m_section_ost;
-
-  bool getParam( const char* sec_pch, 
-                 const char *name_pch,
-                 stParam& param_ost );
 
   stParam* findParam( const char* sec_pch,
                       const char* name_pch );

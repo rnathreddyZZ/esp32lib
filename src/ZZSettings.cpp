@@ -85,11 +85,11 @@ void ZZSettings::dump( void )
   std::map<string, vector<stParam>>::iterator it = m_section_ost.begin( );
   while( it != m_section_ost.end( ) )
   {
-    stParams ostParams = it->second;
+    const stParams& ostParams = it->second;
 
     for( auto i = ostParams.begin( ); i != ostParams.end( ); ++i )
     {
-      stParam ostParam = *i;
+      const stParam& ostParam = *i;
       ZZ_DBG_INFO( "%s %s %s\n", it->first.c_str( ),
                            ostParam.name_str.c_str( ),
                               ostParam.value_str.c_str( ));
@@ -212,7 +212,7 @@ bool ZZSettings::setParam( const char *section_pch,
 
 bool ZZSettings::getParam( const char* sec_pch,
                            const char *name_pch,
-                           stParam& param_ost )
+                           char* value_pch )
 {
 
   stParam* param_pst = findParam( sec_pch, name_pch );
@@ -221,26 +221,8 @@ bool ZZSettings::getParam( const char* sec_pch,
     return false;
   }
 
-  param_ost = *param_pst;
+  strcpy( value_pch, param_pst->value_str.c_str() );
   return true;
-}
-
-
-bool ZZSettings::getParam( const char* sec_pch,
-                           const char *name_pch,
-                           char* value_pch )
-{
-
-
-  bool bRCode = false;
-  stParam param_ost;
-  if( true == getParam( sec_pch, name_pch, param_ost ) )
-  {
-    strcpy( value_pch, param_ost.value_str.c_str() );
-    bRCode = true;
-  }
-
-  return bRCode;
 }
 
 bool ZZSettings::getIntParam( const char* sec_pch,
@@ -291,22 +273,22 @@ bool ZZSettings::getBoolParam( const char* sec_pch,
 {
 
   bool rcode_b = false;
-  stParam param_ost;
+  stParam* param_pst = findParam( sec_pch, name_pch );
 
-  if( true == getParam( sec_pch, name_pch, param_ost ) )
+  if( NULL != param_pst )
   {
-    if( enmDataTypeBool == param_ost.type_u8 )
+    if( enmDataTypeBool == param_pst->type_u8 )
     {
-      if( param_ost.value_str.length() > 0 )
+      if( param_pst->value_str.length() > 0 )
       {
-        if( ( param_ost.value_str == "true" ) ||
-                     ( param_ost.value_str == "1" ) )
+        if( ( param_pst->value_str == "true" ) ||
+                     ( param_pst->value_str == "1" ) )
         {
           value_b = true;
           rcode_b = true;
         }
-        else if( ( param_ost.value_str == "false" ) ||
-                         ( param_ost.value_str == "0" ) )
+        else if( ( param_pst->value_str == "false" ) ||
+                         ( param_pst->value_str == "0" ) )
         {
           value_b = false;
           rcode_b = true;
@@ -334,20 +316,20 @@ bool ZZSettings::getRangeByParam( const char* sec_pch,
 {
 
   bool rcode_b = false;
-  stParam param_ost;
+  stParam* param_pst = findParam( sec_pch, name_pch );
 
-  if( true == getParam( sec_pch, name_pch, param_ost ) )
+  if( NULL != param_pst )
   {
-    if( enmDataTypeInt == param_ost.type_u8 )
+    if( enmDataTypeInt == param_pst->type_u8 )
     {
       if( 0 == strcmp( value_pcch,"minimum" ) )
       {
-        value_u16 = param_ost.min_u16;
+        value_u16 = param_pst->min_u16;
         rcode_b = true;
       }
       else if( 0 == strcmp (value_pcch, "maximum") )
       {
-        value_u16 = param_ost.max_u16;
+        value_u16 = param_pst->max_u16;
         rcode_b = true;
       }
     }
@@ -361,10 +343,10 @@ enmDataType ZZSettings::getType( const char* sec_pcch,
 
   enmDataType type_enm = enmDataTypeNone;
 
-  stParam param_ost;
-  if( true == getParam( sec_pcch, name_pcch, param_ost ) )
+  stParam* param_pst = findParam( sec_pcch, name_pcch );
+  if( NULL != param_pst )
   {
-    type_enm = param_ost.type_u8;
+    type_enm = param_pst->type_u8;
   }
 
   return type_enm;
@@ -394,9 +376,8 @@ std::vector<string> ZZSettings::getKeys( const char* sec_pcch )
   it = m_section_ost.find ( sec_pcch );
   if( it != m_section_ost.end( ) )
   {
-    stParams ostParams = it->second;
-    stParamIter iter;
-    for( iter = ostParams.begin( ); iter != ostParams.end( ); ++iter )
+    const stParams& ostParams = it->second;
+    for( auto iter = ostParams.begin( ); iter != ostParams.end( ); ++iter )
     {
       strKeys.push_back( iter->name_str );
     }
@@ -423,10 +404,10 @@ string ZZSettings::getData( string sec_str )
   it = m_section_ost.find( sec_str );
   if( it != m_section_ost.end( ) )
   {
-    stParams ostParams = it->second;
+    const stParams& ostParams = it->second;
     for( auto i = ostParams.begin( ); i != ostParams.end( ); ++i )
     {
-      stParam param_ost = *i;
+      const stParam& param_ost = *i;
 
       AXJSON ocObjKeyValue;
       ocObjKeyValue.newObj( );
@@ -594,14 +575,14 @@ void ZZSettings::save( )
      write( &iLen, sizeof( int32_t ) );
      write( it->first.c_str( ), iLen );
 
-     vector<stParam> ostParams = it->second;
+     const stParams& ostParams = it->second;
 
      int32_t iCnt = ostParams.size( );
      write( &iCnt, sizeof( int32_t ) );
 
      for( auto i = ostParams.begin( ); i != ostParams.end( ); ++i )
      {
-      stParam ostParam = *i;
+      const stParam& ostParam = *i;
 
       write( &ostParam.max_u16, sizeof( int16_t ) );
       write( &ostParam.min_u16, sizeof( int16_t ) );
@@ -658,7 +639,7 @@ void ZZSettings::load( )
 
   if( !file )
   {
-    ZZ_DBG_INFO( "Device configuration not found. Using the factory set configuration\n" )
+    ZZ_DBG_INFO( "Device configuration not found. Using the factory set configuration\n" );
     m_section_ost.clear( );
     init( );
     save( );
