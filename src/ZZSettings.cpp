@@ -318,9 +318,11 @@ bool ZZSettings::getRangeByParam( const char* sec_pch,
   bool rcode_b = false;
   stParam* param_pst = findParam( sec_pch, name_pch );
 
-  if( NULL != param_pst )
+  if( ( NULL != param_pst ) && ( NULL != value_pcch ) )
   {
-    if( enmDataTypeInt == param_pst->type_u8 )
+      /* int: value range; string: length range */
+    if( ( enmDataTypeInt == param_pst->type_u8 ) ||
+        ( enmDataTypeString == param_pst->type_u8 ) )
     {
       if( 0 == strcmp( value_pcch,"minimum" ) )
       {

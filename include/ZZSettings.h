@@ -82,6 +82,8 @@ public:
   bool isReadOnly( const char* sec_pch,
                    const char* name_pch );
 
+    /* value_pcch is "minimum" or "maximum"; the value range of an
+       int, the length range of a string. false for other types */
   bool getRangeByParam( const char* sec_pch,
                         const char *name_pch,
                         const char *value_pcch,
