@@ -50,6 +50,7 @@ void ZZSettings::append( const char *section_pch,
                          const uint8_t type_u8,
                          const char *value_pch )
 {
+  std::lock_guard<std::recursive_mutex> lock_ost( m_mutex );
 
   if( NULL == section_pch )
   {
@@ -81,6 +82,7 @@ void ZZSettings::append( const char *section_pch,
 
 void ZZSettings::dump( void )
 {
+  std::lock_guard<std::recursive_mutex> lock_ost( m_mutex );
 
   std::map<string, vector<stParam>>::iterator it = m_section_ost.begin( );
   while( it != m_section_ost.end( ) )
@@ -179,6 +181,7 @@ bool ZZSettings::setParam( const char *section_pch,
                            const char *name_pch,
                            const char *value_pch )
 {
+  std::lock_guard<std::recursive_mutex> lock_ost( m_mutex );
 
   stParam* param_pst = findParam( section_pch, name_pch );
   if( NULL == param_pst )
@@ -202,18 +205,61 @@ bool ZZSettings::setParam( const char *section_pch,
                            const char *name_pch,
                            int32_t value_i32 )
 {
+  std::lock_guard<std::recursive_mutex> lock_ost( m_mutex );
 
-  char value_pch[128];
+  char value_pch[16];
 
-  sprintf ( value_pch, "%d", value_i32 );
+  snprintf( value_pch, sizeof( value_pch ), "%ld", (long)value_i32 );
   return setParam( section_pch, name_pch, value_pch );
+}
+
+bool ZZSettings::setParams( const char *section_pch,
+                            std::initializer_list<std::pair<const char*, const char*>> params_ost )
+{
+  std::lock_guard<std::recursive_mutex> lock_ost( m_mutex );
+
+    /* validate every value before changing anything */
+  vector<pair<stParam*, const char*>> ostUpdates;
+
+  for( const auto& param : params_ost )
+  {
+    stParam* param_pst = findParam( section_pch, param.first );
+    if( NULL == param_pst )
+    {
+      ZZ_DBG_ERR( "setParams: unknown parameter %s/%s\n", section_pch, param.first );
+      return false;
+    }
+
+      /* never log the value; it may be a password */
+    if( false == isValidValue( *param_pst, param.second ) )
+    {
+      ZZ_DBG_ERR( "setParams: invalid value for %s/%s\n", section_pch, param.first );
+      return false;
+    }
+    ostUpdates.push_back( { param_pst, param.second } );
+  }
+
+  for( auto& update : ostUpdates )
+  {
+    update.first->value_str = update.second;
+  }
+  return true;
 }
 
 
 bool ZZSettings::getParam( const char* sec_pch,
                            const char *name_pch,
-                           char* value_pch )
+                           char* value_pch,
+                           size_t size_u )
 {
+  std::lock_guard<std::recursive_mutex> lock_ost( m_mutex );
+
+  if( NULL == value_pch || 0 == size_u )
+  {
+    return false;
+  }
+
+  value_pch[0] = '\0';
 
   stParam* param_pst = findParam( sec_pch, name_pch );
   if( NULL == param_pst )
@@ -221,7 +267,32 @@ bool ZZSettings::getParam( const char* sec_pch,
     return false;
   }
 
-  strcpy( value_pch, param_pst->value_str.c_str() );
+    /* never truncate: a cut-off password or URL is worse than none */
+  size_t len_u = param_pst->value_str.length( );
+  if( len_u + 1 > size_u )
+  {
+    ZZ_DBG_ERR( "getParam: %s/%s needs %u bytes, buffer has %u\n",
+                sec_pch, name_pch, (unsigned)( len_u + 1 ), (unsigned)size_u );
+    return false;
+  }
+
+  memcpy( value_pch, param_pst->value_str.c_str( ), len_u + 1 );
+  return true;
+}
+
+bool ZZSettings::getParam( const char* sec_pch,
+                           const char *name_pch,
+                           string& value_str )
+{
+  std::lock_guard<std::recursive_mutex> lock_ost( m_mutex );
+
+  stParam* param_pst = findParam( sec_pch, name_pch );
+  if( NULL == param_pst )
+  {
+    return false;
+  }
+
+  value_str = param_pst->value_str;
   return true;
 }
 
@@ -229,6 +300,7 @@ bool ZZSettings::getIntParam( const char* sec_pch,
                               const char *name_pch,
                               uint32_t& value_u32 )
 {
+  std::lock_guard<std::recursive_mutex> lock_ost( m_mutex );
 
     /* the stored value may come from an old or corrupted file;
        isValidValue rejects anything that is not a whole number
@@ -251,6 +323,7 @@ bool ZZSettings::getDblParam( const char* sec_pch,
                               const char *name_pch,
                               double& value_d )
 {
+  std::lock_guard<std::recursive_mutex> lock_ost( m_mutex );
 
   stParam* param_pst = findParam( sec_pch, name_pch );
 
@@ -271,6 +344,7 @@ bool ZZSettings::getBoolParam( const char* sec_pch,
                                const char *name_pch,
                                bool& value_b )
 {
+  std::lock_guard<std::recursive_mutex> lock_ost( m_mutex );
 
   bool rcode_b = false;
   stParam* param_pst = findParam( sec_pch, name_pch );
@@ -303,6 +377,7 @@ bool ZZSettings::getBoolParam( const char* sec_pch,
 bool ZZSettings::isReadOnly( const char* sec_pch,
                              const char* name_pch )
 {
+  std::lock_guard<std::recursive_mutex> lock_ost( m_mutex );
 
   stParam* param_pst = findParam( sec_pch, name_pch );
 
@@ -314,6 +389,7 @@ bool ZZSettings::getRangeByParam( const char* sec_pch,
                                   const char *value_pcch,
                                   uint16_t& value_u16 )
 {
+  std::lock_guard<std::recursive_mutex> lock_ost( m_mutex );
 
   bool rcode_b = false;
   stParam* param_pst = findParam( sec_pch, name_pch );
@@ -342,6 +418,7 @@ bool ZZSettings::getRangeByParam( const char* sec_pch,
 enmDataType ZZSettings::getType( const char* sec_pcch,
                                  const char* name_pcch )
 {
+  std::lock_guard<std::recursive_mutex> lock_ost( m_mutex );
 
   enmDataType type_enm = enmDataTypeNone;
 
@@ -356,6 +433,7 @@ enmDataType ZZSettings::getType( const char* sec_pcch,
 
 std::vector<string> ZZSettings::getSections( )
 {
+  std::lock_guard<std::recursive_mutex> lock_ost( m_mutex );
 
   vector<string> sections;
 
@@ -371,6 +449,7 @@ std::vector<string> ZZSettings::getSections( )
 
 std::vector<string> ZZSettings::getKeys( const char* sec_pcch )
 {
+  std::lock_guard<std::recursive_mutex> lock_ost( m_mutex );
 
   std::vector<string> strKeys;
   std::map<string, vector<stParam>>::iterator it;
@@ -390,6 +469,7 @@ std::vector<string> ZZSettings::getKeys( const char* sec_pcch )
 
 string ZZSettings::getData( string sec_str )
 {
+  std::lock_guard<std::recursive_mutex> lock_ost( m_mutex );
 
   string data_str;
 
@@ -437,6 +517,7 @@ string ZZSettings::getData( string sec_str )
      firmware defines them */
 bool ZZSettings::setData( string data_str )
 {
+  std::lock_guard<std::recursive_mutex> lock_ost( m_mutex );
 
   AXJSON ocJSON;
 
@@ -542,12 +623,15 @@ static uint32_t crc32( uint32_t crc_u32, const uint8_t* data_puc, size_t len_u )
   return ~crc_u32;
 }
 
-void ZZSettings::save( )
+bool ZZSettings::save( )
 {
+  std::lock_guard<std::recursive_mutex> lock_ost( m_mutex );
 
     /* write to a temporary file and rename it over the
        settings file, so a power loss never leaves a
        truncated settings file behind */
+  bool bOk = false;
+
   File file = LittleFS.open( SETTINGS_TMP_PATH, FILE_WRITE );
   if (!file)
   {
@@ -555,7 +639,7 @@ void ZZSettings::save( )
   }
   else
   {
-    bool bOk = true;
+    bOk = true;
     uint32_t crc_u32 = 0;
     auto write = [&]( const void* pvData, size_t uLen )
     {
@@ -615,12 +699,16 @@ void ZZSettings::save( )
     {
       ZZ_DBG_ERR( "Failed to save the settings\n" );
       LittleFS.remove( SETTINGS_TMP_PATH );
+      bOk = false;
     }
   }
+
+  return bOk;
 }
 
 void ZZSettings::load( )
 {
+  std::lock_guard<std::recursive_mutex> lock_ost( m_mutex );
 
   int32_t len_u32 = 0;
   int32_t secs_u32 = 0;
@@ -831,8 +919,9 @@ void ZZSettings::load( )
 
 void ZZSettings::init( void )
 {
+  std::lock_guard<std::recursive_mutex> lock_ost( m_mutex );
 
-  append( "wifi", "ssid", 0, 64, false, enmDataTypeString, "SaNaSW" );
+  append( "wifi", "ssid", 0, 32, false, enmDataTypeString, "SaNaSW" );   /* 802.11 SSID limit */
   append( "wifi", "ssid_pwd", 0, 64, false, enmDataTypeString, "SaNa@2022#123456" );
   append( "wifi", "soft_ap_name", 0, 64, false, enmDataTypeString, "zoraiz" );
   append( "wifi", "soft_ap_pwd", 0, 64, false, enmDataTypeString, "zoraiz@123" );

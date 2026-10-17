@@ -6,6 +6,12 @@
 #include <cstdio>
 #include <vector>
 #include <map>
+#include <mutex>
+#include <utility>
+#include <initializer_list>
+
+  /* 2: bounded getParam, setParams, save( ) returns bool, thread-safe */
+#define ZZ_SETTINGS_API_VERSION 2
 
 typedef enum data_type_enm
 {
@@ -40,7 +46,8 @@ public:
 
   void dump( void );
 
-  void save( void );
+    /* false if the file could not be written; the old file is kept */
+  bool save( void );
 
   void load( void );
 
@@ -62,10 +69,32 @@ public:
                  const char *name_pch, 
                  int32_t value_i32 );
 
+    /* all-or-nothing: false, and nothing changed, if any parameter
+       is unknown or any value invalid */
+  bool setParams( const char *section_pch,
+                  std::initializer_list<std::pair<const char*, const char*>> params_ost );
 
-  bool getParam( const char* sec_pch, 
+
+    /* false if the parameter does not exist or the value (with its
+       terminator) does not fit in size_u bytes; then value_pch is ""
+       (a truncated value is never returned) */
+  bool getParam( const char* sec_pch,
                  const char *name_pch,
-                 char* value_pch );
+                 char* value_pch,
+                 size_t size_u );
+
+    /* char array: the size comes from the array type */
+  template<size_t N>
+  bool getParam( const char* sec_pch,
+                 const char *name_pch,
+                 char ( &value_ar )[N] )
+  {
+    return getParam( sec_pch, name_pch, value_ar, N );
+  }
+
+  bool getParam( const char* sec_pch,
+                 const char *name_pch,
+                 std::string& value_str );
 
   bool getBoolParam( const char* sec_pch, 
                      const char *name_pch,
@@ -105,6 +134,11 @@ public:
 private:
 
   std::map<std::string, std::vector<stParam>> m_section_ost;
+
+    /* every public method holds it: settings are used from several
+       tasks (loop, Wi-Fi config, web server). recursive because load( )
+       calls save( ) and setParam( int ) calls setParam( char* ) */
+  mutable std::recursive_mutex m_mutex;
 
   stParam* findParam( const char* sec_pch,
                       const char* name_pch );
