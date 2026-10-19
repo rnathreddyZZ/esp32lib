@@ -931,6 +931,7 @@ void ZZSettings::init( void )
   append("application", "ws_port", 0, 65535, false, enmDataTypeInt, "8080");
   append("application", "ws_URL", 0, 1024, false, enmDataTypeString, "/fieldsync/device/SN123456789");
   append("device", "relay_state", 0, 1, false, enmDataTypeBool, "false");
+  append("device", "manual_off", 0, 1, false, enmDataTypeBool, "false");   /* FR-VAL-5: manual off survives a reboot */
 }
 
   /* global settings file */
